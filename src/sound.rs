@@ -26,18 +26,18 @@ pub fn set_default_device_id(input: bool, id: AudioDeviceID) {
     };
 }
 
-pub struct DefaultInputListener<F: Fn(AudioDeviceID)> {
+pub struct DefaultInputListener<F: FnMut(AudioDeviceID)> {
     property_address: AudioObjectPropertyAddress,
     callback: F,
 }
 
-impl<F: Fn(AudioDeviceID)> Drop for DefaultInputListener<F> {
+impl<F: FnMut(AudioDeviceID)> Drop for DefaultInputListener<F> {
     fn drop(&mut self) {
         let _ = self.unregister();
     }
 }
 
-impl<F: Fn(AudioDeviceID)> DefaultInputListener<F> {
+impl<F: FnMut(AudioDeviceID)> DefaultInputListener<F> {
     pub fn new(callback: F) -> Box<Self> {
         let property_address = AudioObjectPropertyAddress {
             mSelector: kAudioHardwarePropertyDefaultInputDevice,
@@ -78,7 +78,7 @@ impl<F: Fn(AudioDeviceID)> DefaultInputListener<F> {
     }
 }
 
-unsafe extern "C" fn alive_listener<F: Fn(AudioDeviceID)>(
+unsafe extern "C" fn alive_listener<F: FnMut(AudioDeviceID)>(
     _device_id: AudioObjectID,
     _n_addresses: u32,
     _properties: *const AudioObjectPropertyAddress,
