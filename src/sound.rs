@@ -26,19 +26,19 @@ pub fn set_default_device_id(input: bool, id: AudioDeviceID) {
     };
 }
 
-pub struct DefaultInputListener {
+pub struct DefaultInputListener<F: Fn(AudioDeviceID)> {
     property_address: AudioObjectPropertyAddress,
-    callback: Box<dyn Fn(AudioObjectID)>,
+    callback: F,
 }
 
-impl Drop for DefaultInputListener {
+impl<F: Fn(AudioDeviceID)> Drop for DefaultInputListener<F> {
     fn drop(&mut self) {
         let _ = self.unregister();
     }
 }
 
-impl DefaultInputListener {
-    pub fn new(callback: Box<dyn Fn(AudioObjectID)>) -> Box<Self> {
+impl<F: Fn(AudioDeviceID)> DefaultInputListener<F> {
+    pub fn new(callback: F) -> Box<Self> {
         let property_address = AudioObjectPropertyAddress {
             mSelector: kAudioHardwarePropertyDefaultInputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
@@ -58,7 +58,7 @@ impl DefaultInputListener {
             AudioObjectAddPropertyListener(
                 kAudioObjectSystemObject,
                 &self.property_address as *const _,
-                Some(alive_listener),
+                Some(alive_listener::<F>),
                 self as *const _ as *mut _,
             )
         };
@@ -70,7 +70,7 @@ impl DefaultInputListener {
             AudioObjectRemovePropertyListener(
                 kAudioObjectSystemObject,
                 &self.property_address as *const _,
-                Some(alive_listener),
+                Some(alive_listener::<F>),
                 self as *const _ as *mut _,
             )
         };
@@ -78,13 +78,13 @@ impl DefaultInputListener {
     }
 }
 
-unsafe extern "C" fn alive_listener(
+unsafe extern "C" fn alive_listener<F: Fn(AudioDeviceID)>(
     _device_id: AudioObjectID,
     _n_addresses: u32,
     _properties: *const AudioObjectPropertyAddress,
     self_ptr: *mut c_void,
 ) -> OSStatus {
-    let self_ptr: &mut DefaultInputListener = &mut *(self_ptr as *mut DefaultInputListener);
+    let self_ptr: &mut DefaultInputListener<F> = &mut *(self_ptr as *mut DefaultInputListener<F>);
     let data_size = mem::size_of::<AudioDeviceID>();
     let device_id: AudioDeviceID = 1;
     let result = AudioObjectGetPropertyData(
