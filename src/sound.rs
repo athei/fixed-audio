@@ -1,5 +1,5 @@
 use coreaudio::sys::*;
-use std::{os::raw::c_void, mem, ptr::null};
+use std::{mem, os::raw::c_void, ptr::null};
 
 pub fn set_default_device_id(input: bool, id: AudioDeviceID) {
     let selector = if input {
@@ -28,6 +28,7 @@ pub fn set_default_device_id(input: bool, id: AudioDeviceID) {
 
 pub struct DefaultInputListener {
     property_address: AudioObjectPropertyAddress,
+    callback: Box<dyn Fn(AudioObjectID)>,
 }
 
 impl Drop for DefaultInputListener {
@@ -37,13 +38,16 @@ impl Drop for DefaultInputListener {
 }
 
 impl DefaultInputListener {
-    pub fn new() -> Box<Self> {
+    pub fn new(callback: Box<dyn Fn(AudioObjectID)>) -> Box<Self> {
         let property_address = AudioObjectPropertyAddress {
             mSelector: kAudioHardwarePropertyDefaultInputDevice,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMaster,
         };
-        let mut ret = Box::new(Self { property_address });
+        let mut ret = Box::new(Self {
+            property_address,
+            callback,
+        });
         ret.register();
         ret
     }
@@ -91,6 +95,6 @@ unsafe extern "C" fn alive_listener(
         &data_size as *const _ as *mut _,
         &device_id as *const _ as *mut _,
     );
-    println!("device_id: {}", device_id);
+    (self_ptr.callback)(device_id);
     result
 }

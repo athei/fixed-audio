@@ -11,7 +11,9 @@ fn main() {
         let name = helpers::get_device_name(id).unwrap();
         println!("{}: {}", id, name);
     }
-    let _listener = sound::DefaultInputListener::new();
+    let _listener = sound::DefaultInputListener::new(Box::new(|device| {
+        println!("callback: {}", device);
+    }));
     unsafe {
         coreaudio::sys::CFRunLoopRun();
     }
