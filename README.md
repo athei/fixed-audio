@@ -12,3 +12,10 @@ use case.
 
 This is a deamon. On startup it checks what your current microphone is and makes sure that macOS will never change it. It listens for audio events and
 switches back to this audio device whenever it changes. No worries. It doesn't poll and eat your CPU.
+
+## I want this in auto start
+
+```sh
+sudo cp target/release/fixed-audio /opt/
+sudo cp local.fixed-audio.plist /Library/LaunchDaemons/
+```
