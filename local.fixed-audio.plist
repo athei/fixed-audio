@@ -12,7 +12,5 @@
 	<string>/opt/fixed-audio</string>
 	<key>RunAtLoad</key>
 	<true/>
-	<key>UserName</key>
-	<string>alexander</string>
 </dict>
 </plist>
